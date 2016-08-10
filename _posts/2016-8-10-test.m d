@@ -1,0 +1,689 @@
+---
+layout: default
+title: java基础 
+category: java
+---
+
+
+# **java笔记**
+
+标签: 再复杂的数据结构,也不过数组和引用(链表)
+
+----
+## java标识符命名规则
+>*  由字母,数字,下划线后美元符号构成
+-  不能以数字开头
+-  区分大小写
+-  长度无限制
+-  不能用java保留字和关键字*
+-  命名习惯: 驼峰式命名
+
+----
+## java转义字符
+|   字符     |作用    |
+| :------------ | :------------ |
+| \n   | 换行  |
+| \\\  | \          |
+|  \r |回车   |
+|   \0|空字符   |
+|   \"|双引号   |
+|   \'|单引号   |
+|   \f| 走纸换页  |
+|   \t|横向跳格,制表符   |
+|\b   |退格   |
+
+
+----
+## 基本类型转换
+>* char不能和byte short直接进行转换,进行运算时会自动转为int型,byte和byte相加也会自动转换成int
+- float强转int,损失精度(小数部分)
+- byte a = 127,byte a = ++b,能编译通过,a = -128,二进制代码加一,01111111+1 = 10000000,首位为符号位,补码为,10000000,-128
+- byte a = 1,byte a +=1,能编译通过,不需要强转
+
+----
+## switch
+>* case子句中的const必须是常量,不能为变量,可以为字符串,所有值必须不相同
+- default可以有可以无,不设置default,输入不符合时会跳过语句
+- switch全部能用ifelse代替,反之不为真
+- java1.7后允许使用String类型作为const
+
+----
+## String
+>* String底层是对一个数组的操作
+- 被final修饰,不能被继承
+- 字符串是常量,String对象一旦创建,就不能被更改,String对象的所有方法不能返回对象本身,返回新的对象,字符串缓冲区支持可的字符串变。因为 String 对象是不可变的，所以可以共享
+- 可以使用+来串联字符串以达到附加新字符的目的,但会产生一个新String对象,所以如果程序对这种附加字符串的需求很频繁,应该用java.lang.StringBuffer类(线程安全的)
+- String部分代码
+```java
+public final class String  //为什么String不能被继承
+    implements java.io.Serializable, Comparable<String>, CharSequence {  
+      
+    private final char value[];  //为什么String不能被改变
+  
+    private int hash; // Default to 0  
+    
+    
+    public String() {  
+        this.value = new char[0];  //声明一个长度为0的char数组
+    }  
+    public String(String original) {  //传字符串数组与哈希值
+        this.value = original.value;  
+        this.hash = original.hash;  
+    }  
+     public String(char value[]) {  
+        this.value = Arrays.copyOf(value, value.length);//拷贝的数组  
+    }  
+     public int length() {  
+        return value.length;  //String的长度就是数组的长度
+    }  
+     public int hashCode() {  
+        int h = hash;  
+        if (h == 0 && value.length > 0) {  
+            char val[] = value;  
+  
+            for (int i = 0; i < value.length; i++) {  //以所有字符串为参数算出哈希值
+                h = 31 * h + val[i];  
+            }  
+            hash = h;  
+        }  
+        return h;  
+    }  
+        
+    public int indexOf(int ch, int fromIndex) {  
+        final int max = value.length;  
+        if (fromIndex < 0) {  
+            fromIndex = 0;  
+        } else if (fromIndex >= max) {  
+            // Note: fromIndex might be near -1>>>1.  
+            return -1;  
+        }  
+  
+        if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {  
+            // handle most cases here (ch is a BMP code point or a  
+            // negative value (invalid code point))  
+            final char[] value = this.value;  
+            for (int i = fromIndex; i < max; i++) {  
+                if (value[i] == ch) {  //循环在数组中查找
+                    return i;  
+                }  
+            }  
+            return -1;  
+        } else {  
+            return indexOfSupplementary(ch, fromIndex);  
+        }  
+    }
+    public int indexOf(int ch) {  
+        return indexOf(ch, 0);  
+    }  
+    public boolean contains(CharSequence s) {  
+        return indexOf(s.toString()) > -1;  
+    }  
+    public String toString() {  
+        return this;  
+    } 
+    public boolean equals(Object anObject) {  
+        if (this == anObject) {  
+            return true;  
+        }  
+        if (anObject instanceof String) {  
+            String anotherString = (String) anObject;  
+            int n = value.length;  
+            if (n == anotherString.value.length) {  
+                char v1[] = value;  
+                char v2[] = anotherString.value;  
+                int i = 0;  
+                while (n-- != 0) {  
+                    if (v1[i] != v2[i])  
+                            return false;  //循环比较两个对象里的所有char
+                    i++;  
+                }  
+                return true;  
+            }  
+        }  
+        return false;  
+    }   
+} 
+   
+```
+----
+## StringBuilder
+>* 主要操作时append(在末尾) 和insert(指定位置加入)
+- toString返回此序列中数据的字符串表达方式
+- 非线程安全,相比StringBuffer减少了线程同步,所以在单线程是效率更高
+
+## StringBuffer
+>* StringBuffer则是可变类，任何对它所指代的字符串的改变都不会产生新的对象
+- 操作与StringBuilder相同,线程安全
+
+----
+## java垃圾回收
+>* 为了让垃圾回收机制更快的回收垃圾对象,可以将对象的引用变量设为null,暗示垃圾回收机制可以回收该对象,但这是被动的,程序员不能绝对控制垃圾回收,虚拟机在内存空间不够用之前不会回收对象
+
+----
+## 重载
+>* 方法名必须相同,形参列表必须不相同(个数,顺序,类型)
+- 方法修饰符与返回值类型可同可不同(public ,static,void,int与是不是重载无关)
+
+----
+## this
+>* 指代本类对象.一个类可以有很多个对象,this代表使用此方法的对象
+- 构造方法只能用this调用,构造方法只能由构造方法调用,以调用另一个构造方法
+- 如果在本类方法里面使用没有重名的方法或者属性,java编译器会在这个方法或属性前加上this
+- 构造方法之间不能相互调用,会导致死循环
+
+----
+## static
+*成员修饰符*
+>* 给修饰的成员会在对象的构造方法被调用前被创建
+- 被static修饰的变量不会存在栈,堆里面.存在共享区域,所有的对象都可以访问
+- 随着类的加载而加载,随类的消失而消失
+- 可以直接用类名访问
+- static和private不能修饰局部属性和方法
+
+----
+##代码块
+>* 静态代码块,在类加载时执行且只被执行一次
+- 构造代码块,new一个对象的时候总是先执行构造代码，再执行构造函数，但是有一点需要注意构造代码不是在构造函数之前运行的，它是依托构造函数执行的,主要用于初始化实例变量和初始化实例环境
+- 同步代码块,使用synchronized关键字修饰，并使用“{}”括起来的代码片段，它表示同一时间只能有一个线程进入到该方法块中，是一种多线程保护机制
+- 普通代码块,紧跟在方法名后面,用方法名调用
+
+----
+## 工具类
+>* 一般工具类都是不能创建对象的,为了严谨,把构造方法私有化
+
+----
+## java7新特性
+>* 增强switch,允许控制表达式是java.lang.String,但不能是StringBuffer或StringBuilder
+
+----
+## 继承
+>* 父类的私有属性(方法)不能被子类继承
+- this和super不能在static里面调用,因为static修饰的成员会在构造方法被调用前被创建,而this和super都是调用构造函数或对象,而构造函数被调用之前对象还没被创建
+- 不写构造方法,子类默认调用父类无参构造方法,所以父类必须有无参构造方法
+- 先父类构造函数再子类构造函数,super必须放在第一行,否则无法执行 - - - **在继承中，子类可以自动转型为父类，但是父类强制转换为子类时只有当引用类型真正的身份为子类时才会强制转换成功，否则失败**
+- 子类继承父类中，子类的实例化过程
+- 构造方法不能被子类继承,子类创建对象时，会先去创建父类的对象,默认是去调用父类的无参构造方法。
+- 子类构造方法中，第一行默认是super(),***为什么子类中第一行会默认有super(),因为他继承父类的成员使用，使用前这些成员必须初始化，而他们是父类的成员，所以，必须通过父类进行初始化。所以，会先创建一个父类的对象。
+- 当父类没有无参构造方法时,必须使用this或者super调用其他的构造方
+
+----
+## 设计模式
+>* 单例模式:保证一个类在内存中只有一个对象**
+
+```java
+public class Single {/*饿汉式单例,类编译时就创建对象,一直占用内存,所以第一次调用时速度快,/以空间换时间*/
+    private Single(){
+    }
+    public void display(){
+        System.out.println("test");
+    }
+    private static Single single = new Single();/*设为私有变量,防止调用时single失去与对象的连接,导致对象被回收和single指向错误*/
+    public static Single getSingle(){
+        return single;
+    }
+    public static void main(String [] args){
+        Single single = Single.getSingle();
+        single.display();
+    }
+}
+class Single2{/*懒汉式单例,类被调用是创建对象,所以第一次调用是速度慢,之后一直占用内存,以时间换空间*/
+    private Single2(){
+    }
+    private static Single2 single2;
+    public static Single2 getSingle(){
+        if(single2==null){
+            single2 = new Single2();
+            return single2;
+        }else{
+            return single2;
+        }
+    }
+}
+```
+>* 装饰者模式  
+装饰者模式和继承能实现同样的功能,但装饰者模式更灵活,比如十个装饰者和由一个基类派生出来的十个子类,要实现功能的组合,装饰者模式只需写二十个对象,而用继承需要写100个类,**程序的功能实现要多用组合,少用继承**
+>* 工厂模式
+>* 观察者模式
+
+----
+## object类
+>* toString方法返回16进制哈希码
+
+```java
+    public String toString(){
+        return getClass().getName()+'@'+Integer.toHexString(hashCode());
+    }//反射类名+@+十六进制哈希码
+```
+>* hashcode 返回10进制哈希码
+>* equals 查看两个变量是不是指向同一个对象地址
+
+
+```java
+    public boolean equals(Object obj){
+          return (this == obj);
+}
+```
+>* 子类重写equals方法必须重写hashcode,因为将对象存入集合中时,有可能存入hashcode不同但却一模一样的对象
+- 重写hashcode尽量使其与对象的可变字段无关,因为有可能发生对象存入集合,查找时hashcode找不到相应值
+- instanceof 返回此对象是否属于某类的布尔值
+
+```
+    a.instanceof A/*判断a对象是否属于A类型,返回布尔型,判断后不能直接用a的方法,必须强制转换为A*/
+```
+----
+## 多态
+>*  1. 静态时多态:方法重载
+   2. 动态多态(运行时多态):父类的引用指向子类的对象
+- - 需要父类对象,传递子类对象
+  - 要使用传进来的子类对象的方法,必须先强转成子类对象
+  - 父类的引用不能访问子类特有的属性和方法
+  - 如果相同的属性,那么父类的引用调用的时父类的属性
+  - 父类的引用调用重写的静态方法,调用的时父类的方法
+- 1.  调用重写的非静态方法,调用子类的方法(虚方法调用)
+  2.  形参声明为父类对象引用,可以传子类类型的参数,反之不行
+  3.  返回值,父类类型的方法返回子类类型的引用
+
+----
+## final
+ *修饰符,修饰类,属性,方法*
+>* 类不能被继承,方法不能被子类重写,变量变成常量只能被赋值一次
+- 一般一个常量同时被static和final同时修饰,常量名全部字母大写
+
+----
+## 比较
+>* 如果是基本数据类型,比较用==
+- 如果是引用类型,比较用equals方法,Object默认比较的是引用对象的地址(要自定义比较规则的话,重写equals,重写equals必须重写hashcode,保持一致性)
+
+----
+## 抽象
+```java
+abstract class Person{
+    abstract public void work();
+    abstract public void eat();
+}
+```
+
+>* 没有绝对的抽象类,因为会从object继承非抽象方法
+- 抽象类不能实例化
+- 可以创建具有指向子类对象的引用
+- 含有抽象方法的类必须是抽象类
+- 子类必须重写所有抽象方法
+- 如果子类没有重写所有父类抽象方法,那子类也是抽象方法
+```java
+abstract class Manager extends Person{
+    void work(){
+        System.out.println("Manager");
+    }
+}
+class CEO extends Manager{
+    @Override
+    void eat() {
+        System.out.println("Manager");/*必须重写*/
+    }
+}
+```
+----
+## 接口
+*特殊的抽象类,抽象类中*
+>* 抽象方法和常量构成的数据结构
+- 继承不能多继承,但接口可以多实现
+- 两个重名的方法可以实现为一个
+- 一个接口可以继承多个接口(相当于实现多个接口,所以可以多继承)
+```java
+interface Person2{//interface默认Public ,所以不能重名
+    /*构造方法用来初始化变量的,接口中只有常量,不需要构造方法,所以接口中没有构造方法*/
+    String name = "呵呵";//默认常量加了public static final
+    void showInfo();//默认抽象加了public abstract
+}
+interface Manage2{
+    void showInfo();
+}
+class CEO2 implements Person2,Manage2{
+    public void showInfo(){
+        System.out.print(name);//两个重名的方法可以实现为一个
+    }
+}
+```
+----
+## 内部类
+>* 外部类的属性,必须创建外部类实例才能使用
+- 外部类可以访问内部类的所有属性和方法,包括私有属性和方法
+- 内部类可以被private修饰,这种情况下其他外部类不能访问
+- 静态内部类不能访问外部的非静态成员
+- 局部内部类不能访问方法体里的非final变量
+- 局部内部类不能被public private static 修饰(相当于局部变量)
+
+----
+## 匿名内部类
+>* 匿名内部类,可以继承抽象或非抽象类,可以实现接口,必须重写抽象方法,可以加其他方法
+```
+public abstract class Inclass {
+	public abstract void fun1();
+	public static void main(String [] args){
+		new  Inclass(){
+			public void fun1(){
+				System.out.print("test");
+			}
+		}.fun1();//匿名内部类
+	}
+}
+```
+
+----
+## 数组
+ >* 数组变量声明时不能指定长度,因为数组还没有创建,创建后,变量指向对象空间的首地址
+- 使用type[] arrayname定义数组,而不是type arrayname[],非必须
+- 不能只分配内存空间不赋初始值,静态初始化由程序员赋初始值,静态初始化由程序员指定数组长度,系统分配初始值,基本数据类型赋值为0,0.0,false'\u0000'等,引用数据内存赋值为null
+- 数组开辟内存空间后,将在堆内存中保存数据
+- 数组拷贝过程中要特别注意:数组下标越界--ArrayIndexOutOfBoundException
+- 使用数组的copyof(原数组,长度)方法拷贝数组,如果原数组长度更小,填充默认值,反之,只复制指定长度的数据   
+*一个循环找出数组最大最小值*
+
+```java
+public class Arraymaxmin {
+	public static void main(String[] args) {
+		int[] array = new int[] { 3, 2, 5, 6, 25, 64, 6, 73, 245, 1 };
+		int max = array[1], min = array[0];
+		for (int i : array) {
+			if (i > max) {
+				max = i;
+			} else if (i < min) {
+				min = i;
+			}
+		} // 一个循环找出数组的最大最小值
+		System.out.println(max + "     " + min);
+	}
+}
+```
+----
+## 多维数组
+ - 多维数组除了第一个维度,其他维度可以不指定长度
+ - 准确地没有真正意义上的多维数组,所谓多维数组,只是每个数组元素中存储的是别的数组的引用
+ 
+----
+## 不定参数
+*(int...a)    java5.0中新增*
+
+ >* 不定参数可以看作一个数组,不限定参数的个数
+- 形参当作数组在方法体里使用
+- 实参以逗号隔开
+- 不定参数必须放在参数列表的最后一个位置
+
+## 异常与错误
+>* Exception
+    - 异常是程序运行时可检测到的,程序员可以处理
+    - 通常时用来表示一个程序员导致的错误
+    - 应该在应用程序级被处理
+    - Try{代码} catch（ExceptingType  e） Finally{代码块}｛捕获异常｝能捕获的异常类型必须在catch中声明
+    - 如果代码中出现了可能捕获的异常,代码将立即转入catch语句,不再继续向下执行
+    - trycatch语句中可以有多个catch语句
+    -  catch字句中,父类异常类型不能放在子类异常类型的前面,范围小的类型要放在范围大的前面
+    -  Finally,任何情况下都会执行(try catch 中return了也会执行)
+    -  可以没有catch和finally
+    -  Exception是所有异常的父类
+    -  RuntimeException及其子类异常不要捕获,实际写代码过程中,编译器提示需要捕获的异常才捕获
+    -  check异常必须被处理
+    -  异常的抛出可通过判断语句中的方法体中加入throw new Exception 
+2. Error
+	 不可处理
+
+----
+## Throws
+
+ >* throws用来声明一个方法可能会抛出的所有异常，跟在方法签名的后面,将异常交给调用者处理,调用者可以继续throws可能产生的异常,或者通过try/catch捕获
+
+----
+## sort
+>* Arrays.sort和Collections.sort对基本数据类型用快速排序,对引用类型用归并排序(mergesort),因为快速排序需要大量的移位操作,且非稳定(相等是不移位),所以不适合引用类型的排序
+- java1.7后,MergeSort改为TimSort(归并排序的升级版),其对对象间比较的实现要求更加严格
+## Finalize
+ >* 清理对象
+ - finalize是object 类的一个方法，在垃圾回收期执行时会调用被回收对象的finalize方法，可以覆盖此方法来实现对其他资源的回收，例如关闭文件等，需要注意的是，一旦垃圾回收期准备好释放对象占用的内存空间，将首先调用其finalize方法，并且在下一次垃圾回收动作发生时才会真正回收对象占用的内存
+ - 垃圾回收器（garbage colector）决定回收某对象时，就会运行该对象的finalize()方法，但是在java中很不幸，如果内存总是充足的，那么垃圾回收啃呢个永远不会进行，也就是finailize()可能永远不被执行，显然指望它作收尾工作时靠不住的。那么finalize()究竟是做什么的呢？它最主要的用途是回收特殊渠道申请的内存。java程序由垃圾回收器，所以一般情况下内存问题不用程序由操心。但有一种JNI(java native interface)调用non-java程序（c或c++），finalize()的工作就是回收这部分内存。
+
+----
+## Calendar
+
+> format输出年月日("yyyy年MM月dd日 HH:mm")**
+
+----
+## 泛型
+
+>* 泛型对象作为参数是类型必须一致
+- 泛型类作为参数的时候,用通配符<?>表示可以接收任意类型的该类对象
+- 泛型类型作为参数,传入的对象类型必须跟参数类型相同
+- 受限泛型, < T extends Namber >，表示泛型只能是指定的类的对象,或者时子 类对象,定义泛型时只能指定上限
+- < ? super Double >限定泛型的下限,只能接收double或double的父类
+- 不能声明父类变量,创建子类对象,只能声明什么,创建什么
+- 泛型静态函数不能使用所在类的泛型
+
+----
+## comparable接口
+>* 所有需要使用Array.sort()排序的object必须实现comparable接口,重写compareTo方法,sort会调用这个方法对对象进行排序,比较哪个属性或方法,怎么样比较,由程序员决定
+
+-------
+## 类集
+*Collections集合操作的类,提供一系列集合操作的方法,Collection,集合接口*
+### Vector
+### List接口
+>* LinkedList与ArrayList一样实现List接口，只是ArrayList是List接口的大小可变数组的实现，LinkedList是List接口链表的实现。基于链表实现的方式使得LinkedList在插入和删除时更优于ArrayList，而随机访问则比ArrayList逊色些(**LinkedList支持随机访问**)
+- ArrayList和LinkedList操作完全一样
+- List<List<String>> list = new ArrayList<>(),泛型的嵌套
+####ArrayList
+>* 满足扩容条件时，扩展后数组大小为（(原数组长度*3)/2+1）与传递参数中较大者 
+####linkedList
+>* 在LinkedList中提供了两个基本属性size、header,其中size表示的LinkedList的大小，header表示链表的表头，Entry为节点对象,每个entry对象里面存有上一个和下一个entry的引用
+- Entry为LinkedList的内部类，它定义了存储的元素。该元素的前一个元素、后一个元素，这是典型的双向链表定义方式,Entry类源码:
+```
+private static class Entry<E> {
+        E element;        //元素节点
+        Entry<E> next;    //下一个元素
+        Entry<E> previous;  //上一个元素
+
+        Entry(E element, Entry<E> next, Entry<E> previous) {
+            this.element = element;
+            this.next = next;
+            this.previous = previous;
+        }
+    }
+```
+### set
+#### hashSet
+```
+    pulic class HashSet<E>
+        extends AbstraceSet<E>
+        implements Set<E>,Cloneable,java.io.Serializable//克隆,序列化
+```
+>* **底层实现**                  通过其源码的观察可以知道的是HashSet的底层实现是基于HashMap的。它不保证Set的迭代顺序,而且不保证该顺序永久不变。HashSet的实现较为的简单，其相关的操作都是通过直接调用底层HashMap的相关方法来完成,当hashMap长度超过threshold时hashMap扩容,哈希再散列,消耗大量时空
+```
+   // 底层使用HashMap来保存HashSet中所有元素。  
+private transient HashMap<E,Object> map;  
+// 定义一个虚拟的Object对象作为HashMap的value，将此对象定义为static final。  
+private static final Object PRESENT = new Object();  
+```
+>* 读取、遍历元素
+``` 
+/** 返回对此set中元素进行迭代的迭代器。返回元素的顺序并不是特定的。 
+ *  
+ * 底层实际调用底层HashMap的keySet来返回所有的key。 
+ * 可见HashSet中的元素，只是存放在了底层HashMap的key上， 
+ * value使用一个static final的Object对象标识。 
+ * @return 对此set中元素进行迭代的Iterator。 
+ */  
+public Iterator<E> iterator() {  
+urn map.keySet().iterator();  
+} 
+
+```
+>* 删除元素
+```
+// 底层实际调用HashMap的remove方法删除指定Entry。 
+public boolean remove(Object o) {  
+return map.remove(o)==PRESENT;  
+   }     
+```
+>* Map中允许key和value为空,所以set中也可以有一个null元素
+- 元素不重复  add方法基于hashMap的put方法实现,同时对key产生哈希码和equals方法来判断是否重复,先比较hash码,如果哈希码不同直接存入,相同则再比较两个key地址是否相同,或者equals能不能通过,若相同或者通过,判定为同一元素,更新entry的value(实现了对value的更新,但由于hashset里面hashMap的value都是同一个常量对象,所以在hashSet里面相当于没更新),但put这个方法在hashMap里能实现更新value的功能
+```
+public V put(K key, V value) {
+    if (key == null)
+        return putForNullKey(value);
+    int hash = hash(key);
+    int i = indexFor(hash, table.length);
+    for (Entry<K,V> e = table[i]; e != null; e = e.next) {
+        Object k;
+        if (e.hash == hash && ((k = e.key) == key || key.equals(k))) {
+            V oldValue = e.value;
+            e.value = value;
+            e.recordAccess(this);
+            return oldValue;
+        }
+    }
+
+    modCount++;
+    addEntry(hash, key, value, i);
+    return null;
+}
+```
+#### TreeSet
+>* treeSet的底层实现是TreeMap
+- 放入treeSet和treeMap中的对象必须实现compare接口,因为treeSet是有序的,不实现接口无法排序
+
+----
+### Map
+#### hashMap
+>* hashMap扩容时扩容为原来的两倍
+- capacity是指哈希表的长度，也就是table的大小，默认为16。装载因子loadFactor是哈希表的"装满程度"
+- 当哈希表中“键值对”的数量超过当前容量(capacity)和装载因子的乘积后，哈希表重新散列(也就是内部的数据结构重建了)，并且哈希表的容量大约变为原来的两倍(哈希再散列需要消耗大量时间和内存)
+- 默认的装载因子DEFAULT_LOAD_FACTOR 是0.75。这个值越大，空间利用率越高，但查询速度(包括get和put)操作会变慢。明白了装载因子之后，threshold也就能理解了，它其实等于容量*装载因子
+- 在Java中最常用的两种结构是数组和模拟指针(引用)，几乎所有的数据结构都可以利用这两种来组合实现，HashMap也是如此。实际上HashMap是一个“链表散列”,HashMap底层实现还是数组，只是数组的每一项都是一条链。其中参数initialCapacity就代表了该数组的长度。下面为HashMap构造函数的源码：
+```
+    public HashMap(int initialCapacity, float loadFactor) {
+            //初始容量不能<0
+            if (initialCapacity < 0)
+                throw new IllegalArgumentException("Illegal initial capacity: "
+                        + initialCapacity);
+            //初始容量不能 > 最大容量值，HashMap的最大容量值为2^30
+            if (initialCapacity > MAXIMUM_CAPACITY)
+                initialCapacity = MAXIMUM_CAPACITY;
+            //负载因子不能 < 0
+            if (loadFactor <= 0 || Float.isNaN(loadFactor))
+                throw new IllegalArgumentException("Illegal load factor: "
+                        + loadFactor);
+    
+            // 计算出大于 initialCapacity 的最小的 2 的 n 次方值。
+            int capacity = 1;
+            while (capacity < initialCapacity)
+                capacity <<= 1;
+            
+            this.loadFactor = loadFactor;
+            //设置HashMap的容量极限，当HashMap的容量达到该极限时就会进行扩容操作
+            threshold = (int) (capacity * loadFactor);
+            //初始化table数组
+            table = new Entry[capacity];
+            init();
+        }
+```
+    从源码中可以看出，每次新建一个HashMap时，都会初始化一个table数组。table数组的元素为Entry节点
+```
+    static class Entry<K,V> implements Map.Entry<K,V> {
+            final K key;
+            V value;
+            Entry<K,V> next;
+            final int hash;
+    
+            /**
+             * Creates new entry.
+             */
+            Entry(int h, K k, V v, Entry<K,V> n) {
+                value = v;
+                next = n;
+                key = k;
+                hash = h;
+            }
+            .......
+        }
+```
+    其中Entry为HashMap的内部类，它包含了键key、值value、下一个节点next，以及hash值，这是非常重要的，正是由于Entry才构成了table数组的项为链表
+
+>* 存储实现：put(key,vlaue)
+首先判断key是否为null，若为null，则直接调用putForNullKey方法。若不为空则先计算key的hash值，然后根据hash值搜索在table数组中的索引位置，如果table数组在该位置处有元素，则通过比较是否存在相同的key，若存在则覆盖原来key的value，否则将该元素保存在链头（最先保存的元素放在链尾）。若table在该处没有元素，则直接保存
+
+>* **HashMap和HashTable有什么区别**：
+1. HashMap继承自AbstractMap,HashTable继承自dictionary
+2. HashMap是非线程安全的，HashTable是线程安全的。
+3. HashMap的键和值都允许有null值存在，而HashTable则不行。
+4. 因为线程安全的问题，HashMap效率比HashTable的要高
+5. 初始大小和扩容方式不同,hashMap初始16,扩容*2,一定是2的指数;hashTable初始11,扩容*2+1
+6. 遍历方式不容,两个都使用了iterator.由于历史原因,hashTable还保留Enumeration
+7. 哈希值使用不同,hashTable直接使用对象的hashCode.hashMap重新计算hash值
+
+>* **HashTable和ConcurrentHashMap的比较**
+    - ConcurrentHashMap是线程安全的HashMap的实现。同样是线程安全的类，它与HashTable在同步方面有什么不同呢？
+之前我们说，synchronized关键字加锁的原理，其实是对对象加锁，不论你是在方法前加synchronized还是语句块前加，锁住的都是对象整体，但是ConcurrentHashMap的同步机制和这个不同，它不是加synchronized关键字，而是基于lock操作的，这样的目的是保证同步的时候，锁住的不是整个对象。事实上，ConcurrentHashMap可以满足concurrentLevel个线程并发无阻塞的操作集合对象
+    - ConcurrentHashMap是基于一个叫Segment数组的，其实和Entry类似,ConcurrentHashMap基于concurrentLevel划分出了多个Segment来对key-value进行存储，从而避免每次锁定整个数组，在默认的情况下，允许16个线程并发无阻塞的操作集合对象，尽可能地减少并发时的阻塞现象
+
+#### treeMap
+>* treeMap底层实现平衡树,但不是严格的平衡二叉树,因为他
+- 从内部结构来看，TreeMap本质上就是一棵“红黑树”，而 TreeMap 的每个 Entry 就是该红黑树的一个节点
+- 放入treeSet的对象和treeMap中的对象要求键(key)要实现Comparable接口或者给TreeMap的构造方法中传入一个实现Comparator接口的比较器
+
+### **Queue**
+>* 常用LinkedQueue
+
+----
+## 包装类
+>* 当方法需要以所有数据类型作为参数传入的时候,基本数据类型不能通过Object传入,所以java为左右基本类型定义了一个类用于表示对象
+-   - int-->Integer 哈希值为值本身
+    - short-->Short
+    - char-->Character 哈希值为字符的哈希值
+- 自动装箱与拆箱,在需要Object类型参数的方法中传入基本数据类型,java会自动把基本数据类型包装成引用类型,在用引用类型相加时,java自动将引用类型拆箱成基本数据类型
+
+----
+##迭代器
+>* 循环删除元素用Iterator的remove,不要用集合的remove,容易出错
+- hasnext判断是否有下一个元素,不移动指针
+- next,把指针移向下一个位置,取出元素
+- remove,删除指针所指向的元素,不移动指针
+
+----
+##IO
+>* 分类:
+输入输出流;字节流字符流;节点流处理流,处理流需要一个节点流为参数
+-  关闭输出流,任何情况下都要关闭,写在finally里面,不然别的程序不能打开这个文件,多个流关闭时,只需要关闭最上层的处理流,这个流会自动关闭下层的节点流
+-  如何实现数据换行？不同系统的换行符不一样
+windows：\r\n
+linux:\n
+Mac：\r
+而常见的高级记事本软件是可以识别任意换行符的（比如Eclipse自带记事本软件）
+- 除了txt文件(也称无格式文件,里面存储的是字符串),其他文件都有格式,文件后缀与文件格式无关,后缀只是用于系统判断用哪种应用打开
+
+-----
+##序列化
+>* 实现Serializable接口,标识这个类的对象具有被序列化的能力;
+- 实现序列化的类需要一个序列化版本ID(非必须)  
+private static final long serialVersionUID = 1L;(目前只有这一种序列化的方式)
+- 序列化只存储对象的成员属性,不存储成员方法,反序列化时,系统取出成员属性,找到对应类的class文件,重新创建对象;
+- 同一个对象多次被序列化时,只会在第一次时被序列化,并分配一个序列化号,后面再序列化时,直接引用这个序列号,以保证反序列化时,所有引用都是指向同一个对象
+- 可变对象在被序列化一次之后,即使后面的成员变量发生了改变,也不能再次通过序列化存储了
+- ObjectOutputStream是一个处理流,需要建立在节点流之上
+##线程
+>- 同一个线程对象只能调用一次start方法
+- 用interruptend停止线程必须捕获中断异常
+###同步
+>* 解决多线程资源共享问题,避免数据混乱
+ - 同步方法
+ - 同步代码块
+ - 同步锁
+###线程通信
+>* 
+##网络编程
+>* 使用GET方式提交数据的时候我们需要将数据拼接到URL的后面(StringBuilder)
+- 在URL后面加?
+- 多个参数用&隔开
+- 参数为键值对,比如https://duckduckgo.com/?q=%E7%BB%93%E5%B7%B4%E5%88%86%E8%AF%8D
+- 使用post方式提交数据通过输出流传输,
+##TCP
+>* 优点: 长期保持连接,输出传输稳定性好,及时性高
+- 缺点: 设备需要保持连接,消耗资源比较大,消耗电量
+- 
