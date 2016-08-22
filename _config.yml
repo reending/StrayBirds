@@ -77,10 +77,10 @@ follow:
     url: http://weibo.com/3098410633/profile?is_all=1
   - class: icon-github-alt
     url: https://github.com/reending
-  - class: icon-twitter
-    url: http://twitter.com
-  - class: icon-google-plus
-    url: http://google.com
+  # - class: icon-twitter
+  #   url: http://twitter.com
+  # - class: icon-google-plus
+  #   url: http://google.com
 
 #Links
 customLinks:
