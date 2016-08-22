@@ -73,12 +73,8 @@ author:
       <p>编程界老新人,安卓界新老人</p>
 #Follow me, you can choose your icon by http://fortawesome.github.io/Font-Awesome/icons/#brand
 follow:
-  - class: icon-rss
-    url: /atom.xml
   - class: icon-weibo
     url: http://weibo.com/3098410633/profile?is_all=1
-  - class: icon-renren
-    url: http://renren.com
   - class: icon-github-alt
     url: https://github.com/reending
   - class: icon-twitter
